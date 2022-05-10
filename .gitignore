@@ -1,3 +1,9 @@
+# Web server setup
+WebServerSetup
+
+# Production builds
+vapp/dist
+
 # Logs
 logs
 *.log
