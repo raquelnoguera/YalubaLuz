@@ -10,3 +10,6 @@ free and it supports [CORS headers](https://developer.mozilla.org/en-US/docs/Web
 As of May 2022, the work is ongoing. There will be improvements soon. Keep tunned!!!
 
 The current site is running at [Yaluba Luz](http://luz.yaluba.com).
+
+The chart works well on large displays, but looks horrible on a mobile device. 
+I know that I need to fix that :-)

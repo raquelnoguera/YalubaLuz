@@ -1,48 +1,49 @@
 <template>
-    <div class="row wrap justify-center q-pt-none q-gutter-lg">
-        <q-btn icon="event" round color="primary">
-            <q-popup-proxy @before-show="updateDateProxy" cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="proxyDate" mask="DD-MM-YYYY" today-btn :locale="es_locale" color="secondary" >
-                    <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup />
-                        <q-btn label="OK" color="primary" flat @click="saveDate" v-close-popup />
-                    </div>
-                </q-date>
-            </q-popup-proxy>
-        </q-btn>
-        <q-btn icon="schedule" round color="primary">
-            <q-popup-proxy @before-show="updateTimeProxy" cover transition-show="scale" transition-hide="scale">
-                <q-time v-model="proxyTime" mask="HH:mm" now-btn :locale="es_locale" color="secondary" >
-                    <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup />
-                        <q-btn label="OK" color="primary" flat @click="saveTime" v-close-popup />
-                    </div>
-                </q-time>
-            </q-popup-proxy>
-        </q-btn>
-    </div>
+  <div class="q-pa-md" style="max-width: 300px">
+    <q-input filled v-model="proxyDateTime">
+      <template v-slot:prepend>
+        <q-icon name="event" class="cursor-pointer">
+          <q-popup-proxy @before-show="updateDateProxy" cover transition-show="scale" transition-hide="scale">
+            <q-date v-model="proxyDate" mask="DD-MM-YYYY" today-btn>
+              <div class="row items-center justify-end">
+                <q-btn v-close-popup label="Close" color="primary" flat />
+                <q-btn label="OK" color="primary" flat @click="saveDate" v-close-popup />
+              </div>
+            </q-date>
+          </q-popup-proxy>
+        </q-icon>
+      </template>
 
-<!--  <div class="q-pa-md">
-        <div class="q-gutter-md column items-start">
-            <q-date v-model="fecha" mask="DD-MM-YYYY" today-btn :locale="es_locale" color="blue" />
-            <q-time v-model="hora" mask="HH:mm" now-btn color="blue" />
-        </div>
-  </div> -->
+      <template v-slot:append>
+        <q-icon name="access_time" class="cursor-pointer">
+          <q-popup-proxy @before-show="updateTimeProxy" cover transition-show="scale" transition-hide="scale">
+            <q-time v-model="proxyTime" mask="HH:mm" format24h now-btn >
+              <div class="row items-center justify-end">
+                <q-btn v-close-popup label="Close" color="primary" flat />
+                <q-btn label="OK" color="primary" flat @click="saveDate" v-close-popup />
+              </div>
+            </q-time>
+          </q-popup-proxy>
+        </q-icon>
+      </template>
+    </q-input>
+  </div>
 </template>
 
 <script>
 import { defineComponent } from 'vue';
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
 import { useYalubaStore } from '../stores/yaluba.js';
 
 export default defineComponent({
-    name: 'SelectComponent',
+    name: 'DateSelector',
     setup () {
         const $q = useQuasar();
         const proxyDate = ref(null);
         const proxyTime = ref(null);
+        const proxyDateTime = ref(null);
         const { fecha, rango, hora } = storeToRefs(useYalubaStore());
         
         const es_locale = ref(
@@ -76,7 +77,7 @@ export default defineComponent({
             let [day, month, year] = proxyDate.value.split("-");
             let selectedDate = new Date(`${year}-${month}-${day}`).getTime();
             console.debug(`SelectComponent -> saveDate() -> current: ${currentdate} selected: ${selectedDate}`)
-            if(selectedDate > currentepoch) { 
+            if(selectedDate > currentepoch) {
                 if((selectedDate - currentepoch ) >= (24 * 3600000)) {
                     $q.notify({
                         color: 'warning',
@@ -90,14 +91,14 @@ export default defineComponent({
                 else { 
                     // if the date has changed, then set the time to 00:00
                     if(parseInt(day) != currentdate.getDate()) {
-                        hora.value = "00:00";
-                        proxyTime.value = "00:00";
-                        fecha.value = proxyDate.value
+                        hora.value = proxyTime.value;
+                        fecha.value = proxyDate.value;
                     }
                 }
             }
             else {
-                fecha.value = proxyDate.value
+                fecha.value = proxyDate.value;
+                hora.value = proxyTime.value;
             }
         }
 
@@ -111,34 +112,43 @@ export default defineComponent({
             }
         }
 
-        function saveTime () {
-            hora.value = proxyTime.value
-        }
+        // function saveTime () {
+        //     hora.value = proxyTime.value
+        // }
+
+        // WATCHERs
+        watch(proxyDate, () => {
+            proxyDateTime.value = `${proxyDate.value} ${proxyTime.value}`;
+        });
+
+        watch(proxyTime, () => {
+            proxyDateTime.value = `${proxyDate.value} ${proxyTime.value}`;
+        });
 
         // HOOKS
-        // onBeforeMount(() => {
-        //     const currentDate = new Date();
-        //     let cDay = currentDate.getDate();
-        //     let cMonth = currentDate.getMonth() + 1;
-        //     let cYear = currentDate.getFullYear();
-        //     let cHour = currentDate.getHours();
-        //     fecha.value = `${cDay}-${cMonth}-${cYear}`;
-        //     hora.value = `${cHour}:00`;
-        // });
+        onMounted(() => {
+          const currentDate = new Date();
+          let cDay = currentDate.getDate();
+          let cMonth = currentDate.getMonth() + 1;
+          let cYear = currentDate.getFullYear();
+          let cHour = currentDate.getHours();
+          proxyDate.value = `${cDay}-${cMonth}-${cYear}`;
+          proxyTime.value = `${cHour}:00`;
+          proxyDateTime.value = `${proxyDate.value} ${proxyTime.value}`;
+        });
 
         return {
             proxyDate,
             proxyTime,
+            proxyDateTime,
             fecha,
             hora,
             rango,
             es_locale,
             updateDateProxy,
             saveDate,
-            updateTimeProxy,
-            saveTime
+            updateTimeProxy
         }
     }
 })
-
 </script>

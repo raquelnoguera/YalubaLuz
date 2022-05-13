@@ -6,7 +6,10 @@ export const useYalubaStore = defineStore('yalubaStore', {
     reeApi: new ree_api(),
     fecha: null,
     rango: 24,   // We leave it hardcode for now because REE does not give PVPC or spot for longer than "next day"
-    hora: null
+    hora: null,
+    isDarkTheme: false,
+    isChartMode: false,
+    datalines: []
   }),
 
   getters: {

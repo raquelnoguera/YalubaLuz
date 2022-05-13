@@ -14,7 +14,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="line in lines" :key="line[0]">
+            <tr v-for="line in datalines" :key="line[0]">
             <td class="text-left">{{line[1]}}</td>
             <td class="text-right">{{line[2]}}</td>
             <td class="text-right">{{line[3]}}</td>
@@ -27,7 +27,7 @@
 
 <script>
 import { defineComponent } from 'vue';
-import { ref, watch, onMounted } from 'vue';
+import { watch, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useYalubaStore } from '../stores/yaluba.js';
 import { useQuasar } from 'quasar';
@@ -38,8 +38,7 @@ export default defineComponent({
     setup () {
         const $q = useQuasar();
         const store = useYalubaStore();
-        const lines = ref([]);
-        const { fecha, rango, hora } = storeToRefs(store);
+        const { fecha, rango, hora, datalines } = storeToRefs(store);
 
         // WATCHERs
         watch(fecha, () => {
@@ -86,7 +85,7 @@ export default defineComponent({
                         })
                     return;     // nothing to do
                 }
-                lines.value.splice(0, lines.value.length);  // Empty the lines array
+                datalines.value.splice(0, datalines.value.length);  // Empty the lines array
                 let pvpc = [];  // List of "precio voluntario pequeño consumidor (tarifa regulada)"
                 let spot = [];  // List of "precio spot (tarifa libre)"
                 // console.debug(`ListPrices -> Response length: ${response.length}`);
@@ -163,17 +162,17 @@ export default defineComponent({
                 if(pvpc.length > 0) {
                     for(let i = 0; i < pvpc.length; i++) {
                         if(spot.length >= i) {
-                            lines.value.push([i, pvpc[i][0], pvpc[i][1], pvpc[i][2], spot[i][2]]);
+                            datalines.value.push([i, pvpc[i][0], pvpc[i][1], pvpc[i][2], spot[i][2]]);
                         }
                         else {
-                            lines.value.push([i, pvpc[i][0], pvpc[i][1], pvpc[i][2], 'No disponible']);
+                            datalines.value.push([i, pvpc[i][0], pvpc[i][1], pvpc[i][2], 'No disponible']);
                         }
                     }
                 }
                 else {
                     if(spot.length > 0) {
                         for(let i = 0; i < spot.length; i++) {
-                            lines.value.push([i, spot[i][0], spot[i][1], "No disponible", spot[i][2]]);
+                            datalines.value.push([i, spot[i][0], spot[i][1], "No disponible", spot[i][2]]);
                         }
                     }
                 }
@@ -181,7 +180,7 @@ export default defineComponent({
                 if(spot.length > pvpc.length) {
                     console.debug(`ListPrices -> pvpc.length: ${pvpc.length} , spot.length: ${spot.length}, difference: ${spot.length - pvpc.length}`);
                     for(let i = pvpc.length; i < spot.length; i++) {
-                        lines.value.push([i, spot[i][0], spot[i][1], "No disponible", spot[i][2]]);
+                        datalines.value.push([i, spot[i][0], spot[i][1], "No disponible", spot[i][2]]);
                     }
                 }
             })
@@ -209,7 +208,7 @@ export default defineComponent({
             fecha,
             hora,
             rango,
-            lines
+            datalines
         }
     }
 })

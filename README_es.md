@@ -10,3 +10,6 @@ con acceso libre. Este API soporta las [cabeceras CORS](https://developer.mozill
 Es un proyecto en curso que iré haciendo en la medida que me de tiempo.
 
 La WEB está disponible en [Yaluba Luz](http://luz.yaluba.com).
+
+El gráfico se ve bien en pantallas grandes, pero se ve muy mal en móviles. Ya
+sé que tengo que ver como mejorar eso :-) 

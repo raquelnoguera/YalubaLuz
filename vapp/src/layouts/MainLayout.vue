@@ -43,16 +43,32 @@
         />
       </q-list>
       <q-list>
-        <q-item-label
-          header
-        >
+        <q-item-label header >
           Selecci&oacute;n de fecha y hora
         </q-item-label>
-
-        <SelectComponent/>
+        <DateSelector/>
+      </q-list>
+      <q-list>
+        <q-toggle
+          class="df"
+          :false-value="false"
+          :label="chartSwitchLabel"
+          :true-value="true"
+          color="grey-14"
+          v-model="isChartMode"
+        />
+      </q-list>
+      <q-list>
+        <q-toggle
+          class="df"
+          :false-value="false"
+          :label="themeSwitchLabel"
+          :true-value="true"
+          color="grey-14"
+          v-model="isDarkTheme"
+        />
       </q-list>
     </q-drawer>
-
     <q-page-container>
       <router-view />
     </q-page-container>
@@ -60,9 +76,12 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch, onBeforeMount } from 'vue';
+import { useQuasar } from 'quasar';
+import { storeToRefs } from 'pinia';
+import { useYalubaStore } from '../stores/yaluba.js';
 import EssentialLink from 'components/EssentialLink.vue';
-import SelectComponent from 'components/SelectComponent.vue';
+import DateSelector from 'components/DateSelector.vue';
 
 const linksList = [
   {
@@ -84,15 +103,61 @@ export default defineComponent({
 
   components: {
     EssentialLink,
-    SelectComponent
+    DateSelector
   },
 
   setup () {
-    const leftDrawerOpen = ref(false)
+    const leftDrawerOpen = ref(false);
+    const themeSwitchLabel = ref(null);
+    const chartSwitchLabel = ref(null);
+    const $q = useQuasar();
+    const { isDarkTheme, isChartMode } = storeToRefs(useYalubaStore());
+
+    $q.dark.set(isDarkTheme);
+
+    // WATCH
+    watch(isDarkTheme, () => {
+      $q.dark.toggle();
+      setThemeLabel();
+    });
+
+    watch(isChartMode, () => {
+      setChartLabel();
+    });
+
+    // METHODS
+
+    function setThemeLabel() {
+      if(isDarkTheme.value == true) {
+        themeSwitchLabel.value = "Switch to Light Theme";
+      }
+      else {
+        themeSwitchLabel.value = "Switch to Dark Theme";
+      }
+    }
+
+    function setChartLabel() {
+      if(isChartMode.value == true) {
+        chartSwitchLabel.value = "Mostrar tabularmente";
+      }
+      else {
+        chartSwitchLabel.value = "Mostrar gráficamente";
+      }
+    }
+
+    // HOOKS
+    onBeforeMount(() => {
+      setThemeLabel();
+      setChartLabel();
+    })
 
     return {
       essentialLinks: linksList,
       leftDrawerOpen,
+      isDarkTheme,
+      isChartMode,
+      themeSwitchLabel,
+      chartSwitchLabel,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       }
