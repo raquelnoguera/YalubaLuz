@@ -48,7 +48,7 @@
         </q-item-label>
         <DateSelector/>
       </q-list>
-      <q-list>
+      <q-list v-if="currentRoute == '/prices'">
         <q-toggle
           class="df"
           :false-value="false"
@@ -76,9 +76,10 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch, onBeforeMount } from 'vue';
+import { defineComponent, ref, computed, watch, onBeforeMount } from 'vue';
 import { useQuasar } from 'quasar';
 import { storeToRefs } from 'pinia';
+import {useRoute} from 'vue-router'
 import { useYalubaStore } from '../stores/yaluba.js';
 import EssentialLink from 'components/EssentialLink.vue';
 import DateSelector from 'components/DateSelector.vue';
@@ -87,14 +88,37 @@ const linksList = [
   {
     title: 'Github',
     caption: 'Código fuente',
-    icon: 'code',
-    link: 'https://github.com/raquelnoguera/YalubaLuz'
+    icon: 'ion-logo-github',
+    link: 'https://github.com/raquelnoguera/YalubaLuz',
+    isblank: true
   },
   {
     title: 'API Red Eléctrica de España',
     caption: 'RED Apidatos',
-    icon: 'api',
-    link: 'https://www.ree.es/es/apidatos'
+    icon: 'power',
+    link: 'https://www.ree.es/es/apidatos',
+    isblank: true
+  },
+  {
+    title: 'Consultar precios',
+    caption: 'Tabla de precios regulado y libre',
+    icon: 'euro',
+    link: '/prices',
+    isblank: false
+  },
+  {
+    title: 'Generación Eléctrica',
+    caption: 'Fuentes de generación',
+    icon: 'electric_meter',
+    link: '/generacion',
+    isblank: false
+  },
+  {
+    title: 'Split de generación',
+    caption: 'Renovable vs no-renovable',
+    icon: 'wind_power',
+    link: '/split',
+    isblank: false
   }
 ]
 
@@ -112,8 +136,11 @@ export default defineComponent({
     const chartSwitchLabel = ref(null);
     const $q = useQuasar();
     const { isDarkTheme, isChartMode } = storeToRefs(useYalubaStore());
-
+    const route = useRoute();
     $q.dark.set(isDarkTheme);
+
+    // COMPUTED
+    const currentRoute = computed(() => route.path);
 
     // WATCH
     watch(isDarkTheme, () => {
@@ -158,6 +185,7 @@ export default defineComponent({
       isChartMode,
       themeSwitchLabel,
       chartSwitchLabel,
+      currentRoute,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       }

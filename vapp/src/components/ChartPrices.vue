@@ -3,6 +3,21 @@
         <canvas id="price-chart" :style="{width: canvasSize[0], height: canvasSize[1]}"></canvas>
         <div class="fit row justify-center" v-if="showZeroMsg"><em><sup>*</sup>Un valor de cero significa que no hay datos en esa hora para esa tarifa.</em></div>
     </div>
+    <q-dialog v-model="toolbar">
+      <q-card>
+        <q-toolbar>
+          <q-avatar>
+            <img src="~assets/yaluba_icon-32.png">
+          </q-avatar>
+
+          <q-toolbar-title>Tarifa {{tarifa}}</q-toolbar-title>
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+
+        <q-card-section v-html="msg_text">
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 </template>
 
 <script>
@@ -12,6 +27,9 @@ import { ref, shallowRef, triggerRef, watch, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useYalubaStore } from '../stores/yaluba.js';
 import { useQuasar } from 'quasar';
+// import { utils } from '../libsjs/utils.js';
+
+const filename = "ChartPrices";
 
 export default defineComponent({
     name: 'ChartPricesComponent',
@@ -24,15 +42,19 @@ export default defineComponent({
         const showZeroMsg = ref(false);     // Used to show the paragraph on top of the chart
         const chart = shallowRef(null);
         const canvasSize = ref([980, 500]) // used to set the size of the canvas
+        // Dialog specific
+        const toolbar = ref(false);
+        const msg_text = ref('');   // Message shown when the user clicks on a point in the chart
+        const tarifa = ref('');     // Used in the title of the dialog that appears when the user click on a poin in the chart 
 
         // WATCHERs
         watch(fecha, () => {
-            console.debug(`ChartPrices -> fecha: ${fecha.value}`);
+            console.debug(`${filename} -> fecha: ${fecha.value}`);
             updateList(fecha.value, hora.value, rango.value);
         });
         
         watch(hora, (_new, _old) => {
-            console.debug(`ChartPrices -> hora nueva: ${_new} , hora anterior: ${_old}`);
+            console.debug(`${filename} -> hora nueva: ${_new} , hora anterior: ${_old}`);
             // Disregard minutes
             if(_new && _old) {  // both have to be defined
                 let newComp = _new.split(":");
@@ -44,7 +66,7 @@ export default defineComponent({
         });
 
         watch(rango, () => {
-            console.debug(`ChartPrices -> rango: ${rango.value}`);
+            console.debug(`${filename} -> rango: ${rango.value}`);
             updateList(fecha.value, hora.value, rango.value);
         });
 
@@ -56,25 +78,38 @@ export default defineComponent({
          */
 
         function setCanvasSize() {
+            const fname = "setCanvasSize()";
             // let width = window.screen.availWidth;
             // let height = window.screen.availHeight;
             let width = window.innerWidth;
             let height = window.innerHeight;
-
+            let canvaswidth = 0;
+            let canvasheight = 0;
             if(width >= (2 * height)) {
-                canvasSize.value = [`${height * 0.8}px`, `${height * 0.7}px`];
+                canvaswidth = height * 0.8;
+                canvasheight = height * 0.7;
             }
             else {
-                canvasSize.value = [`${width * 0.8}px`, `${width * 0.6}px`];
+                canvaswidth = width * 0.8;
+                canvasheight = width * 0.7;
             }
-            console.debug(`ChartPrices -> setCanvasSize -> Canvas size: ${canvasSize.value[0]} x ${canvasSize.value[1]}`);
+            if(canvaswidth < 600) {
+                canvaswidth = 600;
+                canvasheight = 450;
+            }5
+            if(canvasheight < 450) {
+                canvasheight = 450;
+            }
+            canvasSize.value = [`${canvaswidth}px`, `${canvasheight}px`];
+            console.debug(`${filename} -> ${fname} -> Canvas size: ${canvasSize.value[0]} x ${canvasSize.value[1]}`);
         }
 
         /**
          * Computes the data to use in the chart
          */
         function updateChartData() {
-            console.log("Updating chart data");
+            const fname = "updateChartData()";
+            console.log(`${filename} -> ${fname} -> Updating chart data`);
             let labelsHours = [];
             let pvpcPrices = [];
             let spotPrices = [];
@@ -106,23 +141,29 @@ export default defineComponent({
                             label: "PVPC",
                             data: pvpcPrices,
                             fill:true,
-                            backgroundColor: "rgba(255, 178, 102, .5)",
+                            backgroundColor: "rgba(255, 178, 102, .25)",
                             borderColor: "#ff8000",
-                            borderWidth: 3
+                            pointRadius: 2,
+                            borderWidth: 1
                         },
                         {
                             label: "Spot",
                             data: spotPrices,
                             fill: true,
-                            backgroundColor: "rgba(51, 51, 255, .5)",
+                            backgroundColor: "rgba(51, 51, 255, .25)",
                             borderColor: "#3333ff",
-                            borderWidth: 3
+                            pointRadius: 2,
+                            borderWidth: 1
                         }
                     ]
                 },
                 options: {
                     responsive: true,
-                    lineTension: 1,
+                    hover : {
+                        mode: 'nearest',
+                        intersect: false
+                    },
+                    lineTension: 0.25,
                     plugins: {
                         title: {
                             display: true,
@@ -140,6 +181,24 @@ export default defineComponent({
                                 text: '€/MWh'
                             }
                         }
+                    },
+                    onClick: (event) => {
+                        let activePoint = chart.value.getElementsAtEventForMode(event, 'nearest', { intersect: false }, true);
+                        // make sure click was on an actual point
+                        if (activePoint.length > 0) {
+                            var clickedDatasetIndex = activePoint[0].datasetIndex;
+                            var clickedElementindex = activePoint[0].index;
+                            console.debug(`${filename} -> ${fname} -> clickedDatasetIndex: ${clickedDatasetIndex} , clickedElementindex: ${clickedElementindex}`)
+                            var label = chart.value.data.labels[clickedElementindex];
+                            var value = chart.value.data.datasets[clickedDatasetIndex].data[clickedElementindex];     
+                            // alert("Clicked: " + label + " - " + value);
+                            tarifa.value = (chart.value.data.datasets[clickedDatasetIndex].label == "PVPC") ? "PVPC (regulada)" : "Spot (libre)";
+                            msg_text.value = `
+                                <strong>Fecha:</strong> ${datalines.value[clickedElementindex][1]}<br>
+                                <strong>Hora:</strong> ${label}<br>
+                                <strong>Precio:</strong> ${value} €/MWh`;
+                            toolbar.value = true
+                        }
                     }
                 }
             }
@@ -148,13 +207,13 @@ export default defineComponent({
             // console.debug(`ChartPrices -> priceChartData -> PVPC: ${spotPrices}`);
             const ctx = document.getElementById('price-chart');
             if(!chart.value) {
-                console.debug("ChartPrices -> priceChartData -> New Chart");
+                console.debug(`${filename} -> ${fname} -> New Chart`);
                 Chart.register(...registerables);
                 chart.value = new Chart(ctx, chartData);
                 triggerRef(chart);
             }
             else {
-                console.debug("ChartPrices -> priceChartData -> Chart Update");
+                console.debug(`${filename} -> ${fname} -> Chart Update`);
                 // Remove data
                 chart.value.data.labels.splice(0, chart.value.data.labels.length); // empty the labels list
                 chart.value.data.datasets.splice(0, 2); // empty the datasets list
@@ -177,10 +236,11 @@ export default defineComponent({
          * Called when there is a change in the connection status to the EOA in the wallet.
          */
         function updateList(_fecha, _hora, _rango) {
+            const fname = "updateList()";
             store.reeApi.getHourlyPrices(_fecha, _hora, _rango)
             .then( (response) => {
                 if(typeof(response) == 'number') { // an error ocurred
-                    console.error(`ChartPrices -> updateList() -> reeApi.getHourlyPrices returned ${response}`);
+                    console.error(`${filename} -> ${fname} -> reeApi.getHourlyPrices returned ${response}`);
                     $q.notify({
                         color: 'negative',
                         textColor: 'white',
@@ -191,7 +251,7 @@ export default defineComponent({
                         })
                     return;     // nothing to do
                 }
-                console.debug("ChartPrices -> updateList() -> New data retrieved");
+                console.debug(`${filename} -> ${fname} -> New data retrieved`);
                 datalines.value.splice(0, datalines.value.length);  // Empty the lines array
                 let pvpc = [];  // List of "precio voluntario pequeño consumidor (tarifa regulada)"
                 let spot = [];  // List of "precio spot (tarifa libre)"
@@ -218,7 +278,7 @@ export default defineComponent({
                             });
                         }
                         else {
-                            console.error(`ChartPrices -> Unknown type ${response[0].type}`);
+                            console.error(`${filename} -> ${fname} -> Unknown type ${response[0].type}`);
                         }
                     }
                 }
@@ -245,12 +305,12 @@ export default defineComponent({
                             });
                         }
                         else {
-                            console.error(`ChartPrices -> updateList() -> Unknown type ${response[0].type}`);
+                            console.error(`${filename} -> ${fname} -> Unknown type ${response[0].type}`);
                         }
                     }
                 }
                 if(pvpc.length > 0) {
-                    console.debug("ChartPrices -> updateList() -> Updating datalines");
+                    console.debug(`${filename} -> ${fname} -> Updating datalines`);
                     for(let i = 0; i < pvpc.length; i++) {
                         if(spot.length >= i) {
                             datalines.value.push([i, pvpc[i][0], pvpc[i][1], pvpc[i][2], spot[i][2]]);
@@ -271,7 +331,7 @@ export default defineComponent({
                 }
                 // Currently in REE API, spot can extend for 2 days while PVPC is only for the current day
                 if(spot.length > pvpc.length) {
-                    console.debug(`ChartPrices -> pvpc.length: ${pvpc.length} , spot.length: ${spot.length}, difference: ${spot.length - pvpc.length}`);
+                    console.debug(`${filename} -> ${fname} -> pvpc.length: ${pvpc.length} , spot.length: ${spot.length}, difference: ${spot.length - pvpc.length}`);
                     for(let i = pvpc.length; i < spot.length; i++) {
                         datalines.value.push([i, spot[i][0], spot[i][1], "No disponible", spot[i][2]]);
                     }
@@ -312,7 +372,10 @@ export default defineComponent({
             chart,
             priceChartData,
             showZeroMsg,
-            canvasSize
+            canvasSize,
+            toolbar,
+            msg_text,
+            tarifa
         }
     }
 })

@@ -4,7 +4,10 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') }
+      { path: '/', redirect: '/prices' },
+      { path: 'prices', component: () => import('pages/IndexPage.vue') },
+      { path: 'generacion', component: () => import('pages/GenerationPage.vue') },
+      { path: 'split', component: () => import('pages/SplitGenPage.vue') }
     ]
   },
 
