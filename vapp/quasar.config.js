@@ -13,6 +13,7 @@ const ESLintPlugin = require('eslint-webpack-plugin')
 
 
 const { configure } = require('quasar/wrappers');
+const { default: gtag } = require('./src/boot/gtag');
 
 module.exports = configure(function (ctx) {
   return {
@@ -26,8 +27,7 @@ module.exports = configure(function (ctx) {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-webpack/boot-files
     boot: [
-      
-      
+      'gtag'
     ],
 
     // https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js#Property%3A-css
